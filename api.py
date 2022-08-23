@@ -1,10 +1,12 @@
-from main import load_model, load_dataset, load_index, load_cross_encoder, retreive_and_rerank, search
+from main import load_model, load_dataset, load_index, load_cross_encoder, retreive_and_rerank, search, download_files
 from flask import Flask, request
 from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
+
+download_files()
 
 print("Loading model...")
 model = load_model()

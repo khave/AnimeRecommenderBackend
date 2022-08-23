@@ -4,6 +4,10 @@ from sentence_transformers import SentenceTransformer, util, CrossEncoder
 import pickle
 import faiss
 import time
+import gdown
+import os
+import zipfile
+
 
 MODEL_NAME = 'data/search-model-v5' # search-model-v3-L-GPL-L or v4
 DATASET_NAME = 'data/all_reviews_full.csv'
@@ -60,6 +64,27 @@ def load_model():
 
 def load_cross_encoder():
     return CrossEncoder(CROSS_ENCODER_NAME)
+
+
+def download_files():
+    # If data folder doesn't exist create it
+    if not os.path.exists('data'):
+        os.makedirs('data')
+        print("Data does not exist!\nDownloading data...")
+    else:
+        print("Data already exists!")
+        return
+    
+    # Download the files
+    download_id = 'https://drive.google.com/uc?id=1XD9-7FEqF2xYTGlKaTKAbDUCvgw9-eih'
+    output = 'data/heroku_data.zip'
+    gdown.download(download_id, output, quiet=False)
+    # Unzip the files
+    with zipfile.ZipFile(output, 'r') as zip_ref:
+        zip_ref.extractall('data')
+    # Delete the zip file
+    os.remove(output)
+    print("Download complete!")
 
 
 def retreive_and_rerank(cross_encoder, query, results, top_k=100):
