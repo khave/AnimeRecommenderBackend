@@ -6,8 +6,6 @@ app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-download_files()
-
 print("Loading model...")
 model = load_model()
 cross_encoder = load_cross_encoder()
@@ -21,15 +19,17 @@ index = load_index()
 print(f"Amount of reviews: {len(df)}")
 
 
-@app.route('/search', methods=['POST'])
+@app.route('/search', methods=['GET'])
 @cross_origin()
 def predict():
     """
     Post a query to the server and get the results.
     """
-    query = request.form['query']
+    # Get the query parameterse
+    query = request.args.get('query')
+    top_n = int(request.args.get('top_n'))
     print(f"Received query: {query}")
-    raw_results, results = search(query=query, df=df, top_n=150, index=index, model=model)
+    raw_results, results = search(query=query, df=df, top_n=top_n, index=index, model=model)
     # Remove the 'Review' column from the results
     results = results.drop(columns=['Review'])
     #retrieval_results = retreive_and_rerank(cross_encoder, query, raw_results, top_k=50)

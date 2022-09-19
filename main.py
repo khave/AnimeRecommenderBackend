@@ -1,7 +1,5 @@
 import pandas as pd
-import numpy as np
-from sentence_transformers import SentenceTransformer, util, CrossEncoder
-import pickle
+from sentence_transformers import SentenceTransformer, CrossEncoder
 import faiss
 import time
 import gdown
@@ -9,10 +7,10 @@ import os
 import zipfile
 
 
-MODEL_NAME = 'data/search-model-v5' # search-model-v3-L-GPL-L or v4
-DATASET_NAME = 'data/all_reviews_full.csv'
+MODEL_NAME = 'data/anirec-model-v1' # search-model-v3-L-GPL-L or v4
+DATASET_NAME = 'data/all_reviews_full_plus.csv'
 # Best models are probably search-model-v3-L-GPL or search-model-v3-L
-INDEX_FILE_NAME = 'data/anime_reviews-search-model-v5.index'
+INDEX_FILE_NAME = 'data/anime-reviews-anirec-model-v1.index'
 CROSS_ENCODER_NAME = 'cross-encoder/ms-marco-TinyBERT-L-2-v2'
 
 
@@ -35,10 +33,18 @@ def search(query, df, top_n, index, model):
     """
     t = time.time()
     query_vector = model.encode([query])
+    #query_vector = encode(model, query)
     top_k = index.search(query_vector, top_n) # We can't just top_n = len(df) since then we will just return all the results. 
     # We could use the old search with similarities but that is slower.
     top_k_ids = top_k[1].tolist()[0]
-    top_k_ids = list(np.unique(top_k_ids))
+    # Get the anime titles for the top_k_ids without using numpy
+    
+    # Create a list of all the unique top_k_ids
+    top_k_ids = list(set(top_k_ids))
+    #top_k_ids_np = list(np.unique(top_k_ids))
+
+    # Assert whether the top_k_ids are the same as the top_k_ids_np
+    #assert top_k_ids == top_k_ids_np
 
     # These are the raw results i.e. the reviews that have the highest similarity to the query.
     raw_results = df.iloc[top_k_ids].copy()
@@ -64,28 +70,7 @@ def load_model():
 
 def load_cross_encoder():
     return CrossEncoder(CROSS_ENCODER_NAME)
-
-
-def download_files():
-    # If data folder doesn't exist create it
-    if not os.path.exists('data'):
-        os.makedirs('data')
-        print("Data does not exist!\nDownloading data...")
-    else:
-        print("Data already exists!")
-        return
     
-    # Download the files
-    download_id = 'https://drive.google.com/uc?id=1XD9-7FEqF2xYTGlKaTKAbDUCvgw9-eih'
-    output = 'data/heroku_data.zip'
-    gdown.download(download_id, output, quiet=False)
-    # Unzip the files
-    with zipfile.ZipFile(output, 'r') as zip_ref:
-        zip_ref.extractall('data')
-    # Delete the zip file
-    os.remove(output)
-    print("Download complete!")
-
 
 def retreive_and_rerank(cross_encoder, query, results, top_k=100):
     """
@@ -136,21 +121,22 @@ def main():
         if query.lower() == 'quit' or query.lower() == 'q' or query.lower() == 'exit':
             print("Goodbye!")
             break
-        raw_results, results = search(query=query, df=df, top_n=250, index=index, model=model) # We have around 26,000 reviews in the dataset, so we get the top 1000 reviews for each query.
-        print(f"Results:\n{results.head(10)}\n")
+        raw_results, results = search(query=query, df=df, top_n=1500, index=index, model=model) # We have around 26,000 reviews in the dataset, so we get the top 1000 reviews for each query.
+        print(f"Results:\n{results.head(18)}\n")
+        print(f"Raw results:\n{raw_results.head(18)}\n")
         print("Retreiving and reranking...")
         retrieval_results = retreive_and_rerank(cross_encoder, query, raw_results, top_k=50)
-        print(f"Retrieval Results:\n{retrieval_results.head(5)}\n")
-        # Print the reviews
-        count = 0; 
-        for anime_title, review in retrieval_results['Review'].items():
-            print(f"{anime_title}\n{review}\n")
-            count += 1
-            if count == 2:
-                count = 0
-                break
-        print("\n")
+        print(f"Retrieval Results:\n{retrieval_results.head(8)}\n")
+        # # Print the reviews
+        # count = 0; 
+        # for anime_title, review in retrieval_results['Review'].items():
+        #     print(f"{anime_title}\n{review}\n")
+        #     count += 1
+        #     if count == 2:
+        #         count = 0
+        #         break
+        # print("\n")
 
 
-#if __name__ == '__main__':
-#    main()
+if __name__ == '__main__':
+    main()
