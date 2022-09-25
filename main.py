@@ -2,14 +2,10 @@ import pandas as pd
 from sentence_transformers import SentenceTransformer, CrossEncoder
 import faiss
 import time
-import gdown
-import os
-import zipfile
 
 
-MODEL_NAME = 'data/anirec-model-v1' # search-model-v3-L-GPL-L or v4
+MODEL_NAME = 'khave/anirec-model-v1'
 DATASET_NAME = 'data/all_reviews_full_plus.csv'
-# Best models are probably search-model-v3-L-GPL or search-model-v3-L
 INDEX_FILE_NAME = 'data/anime-reviews-anirec-model-v1.index'
 CROSS_ENCODER_NAME = 'cross-encoder/ms-marco-TinyBERT-L-2-v2'
 
@@ -33,18 +29,11 @@ def search(query, df, top_n, index, model):
     """
     t = time.time()
     query_vector = model.encode([query])
-    #query_vector = encode(model, query)
     top_k = index.search(query_vector, top_n) # We can't just top_n = len(df) since then we will just return all the results. 
     # We could use the old search with similarities but that is slower.
     top_k_ids = top_k[1].tolist()[0]
-    # Get the anime titles for the top_k_ids without using numpy
     
-    # Create a list of all the unique top_k_ids
     top_k_ids = list(set(top_k_ids))
-    #top_k_ids_np = list(np.unique(top_k_ids))
-
-    # Assert whether the top_k_ids are the same as the top_k_ids_np
-    #assert top_k_ids == top_k_ids_np
 
     # These are the raw results i.e. the reviews that have the highest similarity to the query.
     raw_results = df.iloc[top_k_ids].copy()
@@ -57,7 +46,7 @@ def search(query, df, top_n, index, model):
 
     results.drop_duplicates(subset='Anime Title', keep='first', inplace=True)
 
-    # Set all NaN values in Anime URL to empty string
+    # Set all NaN values in Anime URL to empty string, to avoid issues in the frontend
     results['Image URL'] = results['Image URL'].fillna('')
 
     print('>>>> Results in Total Time: {}'.format(time.time()-t))
@@ -115,7 +104,6 @@ def main():
 
     print(f"Amount of reviews: {len(df)}")
 
-    # Keep asking the user for a query until they enter 'quit'
     while True:
         query = input("Enter a query (q or quit to exit): ")
         if query.lower() == 'quit' or query.lower() == 'q' or query.lower() == 'exit':

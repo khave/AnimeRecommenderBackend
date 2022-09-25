@@ -1,4 +1,8 @@
 .env/
-.data/
-data/
+.data/old_data
+data/old_data
 __pycache__/
+
+data/
+
+Backup.zip

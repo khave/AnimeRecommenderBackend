@@ -1,4 +1,4 @@
-from main import load_model, load_dataset, load_index, load_cross_encoder, retreive_and_rerank, search, download_files
+from main import load_model, load_dataset, load_index, load_cross_encoder, retreive_and_rerank, search
 from flask import Flask, request
 from flask_cors import CORS, cross_origin
 
